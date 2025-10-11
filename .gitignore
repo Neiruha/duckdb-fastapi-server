@@ -1,0 +1,17 @@
+# виртуальное окружение
+.venv/
+# логи
+logs/
+# временные и дампы
+*.duckdb
+*.ducktape
+*.bak
+__pycache__/
+*.pyc
+# Jupyter
+.ipynb_checkpoints/
+# кэш VSCode
+.vscode/
+# data dumps
+app/data/backups/
+app/data/cache/
