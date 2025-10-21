@@ -16,9 +16,9 @@ POSTGRES_DSN = os.getenv("POSTGRES_DSN", "postgresql://user:pass@localhost:5432/
 LOG_DIR = os.getenv("LOG_DIR", "/srv/neiruha/lab/app/server/logs")
 LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO").upper()
 
-# ---- ТОКЕНЫ (временные до 20 октября) ----
+# ---- ТОКЕНЫ (временные до бета-версии) ----
 TOKENS: Dict[str, str] = {
     "tg_bot_token_abcdef": "server",
     "miniapp_token_123456": "client",
-    "phil_token_zxcvbn": "server",
+    "phil_token_zxcvbnhjaks": "server",
 }

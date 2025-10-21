@@ -2,12 +2,15 @@
 .venv/
 # логи
 logs/
+bench/
+config/*.json
 # временные и дампы
 *.duckdb
 *.ducktape
 *.bak
 __pycache__/
 *.pyc
+*.env
 # Jupyter
 .ipynb_checkpoints/
 # кэш VSCode
@@ -15,3 +18,4 @@ __pycache__/
 # data dumps
 app/data/backups/
 app/data/cache/
+git

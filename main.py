@@ -3,6 +3,10 @@ from fastapi import FastAPI, Depends, HTTPException, Header, Query, Request
 from fastapi.responses import JSONResponse
 from typing import Optional
 import datetime
+from datetime import timezone
+from zoneinfo import ZoneInfo
+
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials  # ← NEW
 
 from .config import APP_TITLE, API_PREFIX, TOKENS
 from .logging_utils import get_logger
@@ -13,16 +17,33 @@ from .data.users import build_user_info, build_user_list
 from .db.connection import get_conn  # <-- добавили
 
 log = get_logger("api")
-app = FastAPI(title=APP_TITLE)
 
-# --- Корень ---
+# Важно: двигаем доки/схему под /api
+app = FastAPI(
+    title=APP_TITLE,
+    docs_url="/api/docs",
+    redoc_url=None,
+    openapi_url="/api/openapi.json",
+)
+
+# --- Корень (локальный, без префикса) ---
 @app.get("/")
 def root():
     return {
         "message": "🦋 Startup Lab API",
         "quote": "«Кто с чудовищами сражается, тому стоит следить, чтобы самому не стать чудовищем.» — Ф. Ницше",
         "health": "/api/v1/health",
-        "docs": "/docs"
+        "docs": "/api/docs",
+    }
+
+# --- Публичный корень под /api (совпадает с прокси на 443) ---
+@app.get("/api")
+def api_root():
+    return {
+        "message": "🦋 Startup Lab API",
+        "health": "/api/v1/health",
+        "docs": "/api/docs",
+        "openapi": "/api/openapi.json",
     }
 
 # --- Startup safe-check: проверяем минимальное чтение из БД ---
@@ -52,11 +73,33 @@ async def log_requests(request: Request, call_next):
         return JSONResponse(status_code=500, content={"detail": "Internal Server Error"})
 
 # --- Auth helpers ---
-def require_token(authorization: Optional[str] = Header(default=None, alias="Authorization")) -> str:
-    if not authorization:
+security = HTTPBearer(auto_error=False)  # ← NEW
+
+def require_token(
+    credentials: HTTPAuthorizationCredentials = Depends(security),  # ← NEW (основной путь для Swagger)
+    authorization: Optional[str] = Header(  # ← Fallback для старых клиентов/проксей
+        default=None,
+        alias="Authorization",
+        include_in_schema=False,  # не светим второе поле в Swagger
+    ),
+) -> str:
+    token: Optional[str] = None
+
+    # 1) Нормальный путь через HTTPBearer (Swagger -> Authorize)
+    if credentials and credentials.scheme and credentials.scheme.lower() == "bearer":
+        token = credentials.credentials.strip()
+
+    # 2) Fallback: вручную разбираем заголовок Authorization
+    elif authorization:
+        lower = authorization.lower()
+        if lower.startswith("bearer "):
+            token = authorization[7:].strip()
+        else:
+            raise HTTPException(status_code=401, detail="Missing or invalid Authorization header")
+    else:
         raise HTTPException(status_code=401, detail="Missing Authorization header")
-    token = authorization.replace("Bearer ", "").strip()
-    role = TOKENS.get(token)
+
+    role = TOKENS.get(token or "")
     if not role:
         raise HTTPException(status_code=403, detail="Invalid token")
     return role
@@ -69,7 +112,13 @@ def need_server_role(role: str = Depends(require_token)) -> str:
 # --- Routes ---
 @app.get(f"{API_PREFIX}/health")
 def health():
-    return {"ok": True, "ts": datetime.datetime.utcnow().isoformat() + "Z"}
+    now_utc = datetime.datetime.now(timezone.utc)
+    now_waw = datetime.datetime.now(ZoneInfo("Europe/Warsaw"))
+    return {
+        "ok": True,
+        "ts_utc": now_utc.isoformat(),
+        "ts_warsaw": now_waw.isoformat(),
+    }
 
 @app.post(f"{API_PREFIX}/get_user_info", response_model=UserInfoOut)
 def get_user_info(payload: GetUserInfoIn, role: str = Depends(require_token)):
