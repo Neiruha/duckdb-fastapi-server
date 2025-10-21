@@ -19,3 +19,5 @@ __pycache__/
 app/data/backups/
 app/data/cache/
 git
+*.code-workspace
+.gitignore
