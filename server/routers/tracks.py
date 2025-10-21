@@ -1,11 +1,11 @@
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 
 from ..middleware.access import need_server_role, require_token
-from ..schemas.tracks import TrackSummaryOut
+from ..schemas.tracks import TrackRenameIn, TrackRenamedOut, TrackSummaryOut
 from ..schemas.users import TrackWithTeachersOut
-from ..services.tracks_service import tracks_all_active, tracks_for_student, tracks_for_teacher
+from ..services.tracks_service import rename_track, tracks_all_active, tracks_for_student, tracks_for_teacher
 
 router = APIRouter(prefix="/tracks", tags=["tracks"])
 
@@ -31,3 +31,16 @@ def student_tracks(
 @router.get("/active", response_model=list[TrackSummaryOut])
 def active_tracks(role: str = Depends(need_server_role)) -> list[TrackSummaryOut]:  # noqa: ARG001
     return tracks_all_active()
+
+
+@router.patch("/{track_id}", response_model=TrackRenamedOut)
+def track_rename(
+    track_id: str,
+    payload: TrackRenameIn,
+    role: str = Depends(need_server_role),  # noqa: ARG001
+) -> TrackRenamedOut:
+    # TODO: после SSO добавить проверку принадлежности
+    data = rename_track(track_id, payload.title)
+    if not data:
+        raise HTTPException(status_code=404, detail="Track not found")
+    return data

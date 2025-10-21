@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import List
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, constr
 
 
 class GetUserInfoIn(BaseModel):
@@ -52,3 +52,12 @@ class UserListItem(BaseModel):
 class UserListOut(BaseModel):
     total: int
     items: List[UserListItem]
+
+
+class UserRenameIn(BaseModel):
+    display_name: constr(strip_whitespace=True, min_length=1)
+
+
+class UserRenamedOut(BaseModel):
+    user_id: str
+    display_name: str

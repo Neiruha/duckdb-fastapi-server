@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from ..db import tracks_repo
-from ..schemas.tracks import TrackSummaryOut
+from ..schemas.tracks import TrackRenamedOut, TrackSummaryOut
 from ..schemas.users import TrackTeacherOut, TrackWithTeachersOut
 from ..utils.time import now_utc
 
@@ -31,3 +31,10 @@ def tracks_for_student(user_id: str, active_only: bool) -> list[TrackWithTeacher
 def tracks_all_active() -> list[TrackSummaryOut]:
     rows = tracks_repo.list_active(now_utc())
     return [TrackSummaryOut(**row) for row in rows]
+
+
+def rename_track(track_id: str, title: str) -> TrackRenamedOut | None:
+    row = tracks_repo.rename_title(track_id, title)
+    if not row:
+        return None
+    return TrackRenamedOut(**row)

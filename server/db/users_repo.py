@@ -179,3 +179,18 @@ def list_users(limit: int, offset: int) -> Dict[str, Any]:
         items = dictrows(cur)
         total = con.execute("SELECT COUNT(*) FROM users").fetchone()[0]
     return {"total": total, "items": items}
+
+
+def rename_display_name(user_id: str, display_name: str) -> Dict[str, Any] | None:
+    with get_conn(False) as con:
+        cur = con.execute(
+            """
+            UPDATE users
+            SET display_name = ?, updated_at = CURRENT_TIMESTAMP
+            WHERE user_id = ?
+            RETURNING user_id, display_name
+            """,
+            [display_name, user_id],
+        )
+        rows = dictrows(cur)
+    return rows[0] if rows else None
