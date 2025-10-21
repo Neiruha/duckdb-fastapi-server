@@ -4,6 +4,7 @@ from fastapi import APIRouter
 
 from ..config import API_PREFIX
 from . import dbalive, flags, health, profiles, scores, sessions, tracks, users
+from . import flags, health, profiles, scores, sessions, tracks, users
 
 __all__ = ["get_api_router"]
 
