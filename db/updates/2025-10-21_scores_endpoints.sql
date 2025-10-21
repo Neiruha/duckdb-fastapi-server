@@ -1,0 +1,1 @@
+-- Migration for scores endpoints API (no schema changes required).

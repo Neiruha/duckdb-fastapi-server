@@ -3,8 +3,14 @@ from __future__ import annotations
 from fastapi import APIRouter, Depends, HTTPException, Query
 
 from ..middleware.access import need_server_role, require_token
-from ..schemas.users import GetUserInfoIn, UserInfoOut, UserListOut
-from ..services.users_service import get_user_info, list_users
+from ..schemas.users import (
+    GetUserInfoIn,
+    UserInfoOut,
+    UserListOut,
+    UserRenameIn,
+    UserRenamedOut,
+)
+from ..services.users_service import get_user_info, list_users, rename_user
 
 router = APIRouter(prefix="/users", tags=["users"])
 
@@ -30,3 +36,15 @@ def user_list(
     offset: int = Query(0, ge=0),
 ) -> UserListOut:
     return list_users(limit, offset)
+
+
+@router.patch("/{user_id}", response_model=UserRenamedOut)
+def user_rename(
+    user_id: str,
+    payload: UserRenameIn,
+    role: str = Depends(need_server_role),  # noqa: ARG001
+) -> UserRenamedOut:
+    data = rename_user(user_id, payload.display_name)
+    if not data:
+        raise HTTPException(status_code=404, detail="User not found")
+    return data

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 from .connection import dictrows, get_conn
 from ..logging_utils import get_logger
@@ -85,3 +85,18 @@ def list_teachers_for_track(track_id: str) -> List[Dict[str, Any]]:
         )
         rows = dictrows(cur)
     return rows
+
+
+def rename_title(track_id: str, title: str) -> Optional[Dict[str, Any]]:
+    with get_conn(False) as con:
+        cur = con.execute(
+            """
+            UPDATE tracks
+            SET title = ?, updated_at = CURRENT_TIMESTAMP
+            WHERE track_id = ?
+            RETURNING track_id, title
+            """,
+            [title, track_id],
+        )
+        rows = dictrows(cur)
+    return rows[0] if rows else None

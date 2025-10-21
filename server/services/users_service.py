@@ -3,7 +3,15 @@ from __future__ import annotations
 from typing import Optional
 
 from ..db import tracks_repo, users_repo
-from ..schemas.users import CuratorOut, TrackTeacherOut, TrackWithTeachersOut, UserInfoOut, UserListItem, UserListOut
+from ..schemas.users import (
+    CuratorOut,
+    TrackTeacherOut,
+    TrackWithTeachersOut,
+    UserInfoOut,
+    UserListItem,
+    UserListOut,
+    UserRenamedOut,
+)
 from ..utils.time import now_utc, to_warsaw_iso
 
 
@@ -63,3 +71,10 @@ def list_users(limit: int, offset: int) -> UserListOut:
             )
         )
     return UserListOut(total=data["total"], items=items)
+
+
+def rename_user(user_id: str, display_name: str) -> UserRenamedOut | None:
+    row = users_repo.rename_display_name(user_id, display_name)
+    if not row:
+        return None
+    return UserRenamedOut(**row)
