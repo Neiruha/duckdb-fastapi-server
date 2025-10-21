@@ -6,6 +6,7 @@ from .flags_service import flags_by_telegram
 from .profiles_service import profile_by_telegram
 from .tracks_service import tracks_for_teacher, tracks_for_student, tracks_all_active
 from .sys_events_service import write_sys_event
+from .dbalive_service import get_db_status
 
 __all__ = [
     "connect_session",
@@ -19,4 +20,5 @@ __all__ = [
     "tracks_for_student",
     "tracks_all_active",
     "write_sys_event",
+    "get_db_status",
 ]
