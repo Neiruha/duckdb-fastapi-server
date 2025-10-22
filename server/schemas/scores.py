@@ -13,7 +13,8 @@ class ScoreOut(BaseModel):
     student_id: str
     metric_id: str
     metric_name: Optional[str] = None
-    value: int
+    value_raw: float
+    value_smooth: float
     rater_user_id: str
     role_at_rate: Optional[str] = None
     comment: Optional[str] = None
@@ -28,3 +29,16 @@ class ScoresQueryIn(BaseModel):
     until: Optional[datetime] = None
     limit: int = Field(200, ge=1, le=2000)
     offset: int = Field(0, ge=0)
+
+
+class SmoothedSeriesPoint(BaseModel):
+    t: str
+    self_weighted: float
+    teacher_weighted: float
+    mentor_weighted: float
+    composite: float
+
+
+class SmoothedSeriesOut(BaseModel):
+    interval: str
+    points: List[SmoothedSeriesPoint]

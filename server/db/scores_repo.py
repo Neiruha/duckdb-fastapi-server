@@ -7,6 +7,26 @@ from .connection import dictrows, get_conn
 from ..utils.time import ensure_naive_utc
 
 
+def _clamp_score(value: Any) -> float:
+    try:
+        numeric = float(value)
+    except (TypeError, ValueError):
+        return 0.0
+    if numeric < 0:
+        return 0.0
+    if numeric > 100:
+        return 100.0
+    return numeric
+
+
+def _with_smoothing(rows: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    for row in rows:
+        raw_value = row.get("value_raw")
+        row["value_raw"] = float(raw_value) if raw_value is not None else 0.0
+        row["value_smooth"] = _clamp_score(raw_value)
+    return rows
+
+
 def list_by_track(
     track_id: str,
     *,
@@ -41,7 +61,7 @@ def list_by_track(
             sms.student_id,
             sms.metric_id,
             m.name AS metric_name,
-            sms.value,
+            sms.value AS value_raw,
             sms.rater_user_id,
             sms.role_at_rate,
             sms.comment,
@@ -57,7 +77,7 @@ def list_by_track(
 
     with get_conn(True) as con:
         cur = con.execute(sql, params)
-        return dictrows(cur)
+        return _with_smoothing(dictrows(cur))
 
 
 def list_by_student(
@@ -94,7 +114,7 @@ def list_by_student(
             sms.student_id,
             sms.metric_id,
             m.name AS metric_name,
-            sms.value,
+            sms.value AS value_raw,
             sms.rater_user_id,
             sms.role_at_rate,
             sms.comment,
@@ -110,7 +130,7 @@ def list_by_student(
 
     with get_conn(True) as con:
         cur = con.execute(sql, params)
-        return dictrows(cur)
+        return _with_smoothing(dictrows(cur))
 
 
 def list_by_sets(
@@ -160,7 +180,7 @@ def list_by_sets(
             sms.student_id,
             sms.metric_id,
             m.name AS metric_name,
-            sms.value,
+            sms.value AS value_raw,
             sms.rater_user_id,
             sms.role_at_rate,
             sms.comment,
@@ -175,6 +195,48 @@ def list_by_sets(
 
     sql += " ORDER BY ts.occurred_at DESC LIMIT ? OFFSET ?"
     params.extend([limit, offset])
+
+    with get_conn(True) as con:
+        cur = con.execute(sql, params)
+        return _with_smoothing(dictrows(cur))
+
+
+def list_for_series(
+    track_id: str,
+    *,
+    student_id: Optional[str] = None,
+    metric_id: Optional[str] = None,
+    since: Optional[datetime] = None,
+    until: Optional[datetime] = None,
+) -> List[Dict[str, Any]]:
+    where = ["ts.track_id = ?"]
+    params: List[Any] = [track_id]
+
+    if student_id:
+        where.append("sms.student_id = ?")
+        params.append(student_id)
+    if metric_id:
+        where.append("sms.metric_id = ?")
+        params.append(metric_id)
+    if since:
+        where.append("ts.occurred_at >= ?")
+        params.append(ensure_naive_utc(since))
+    if until:
+        where.append("ts.occurred_at < ?")
+        params.append(ensure_naive_utc(until))
+
+    sql = f"""
+        SELECT
+            ts.occurred_at,
+            sms.value AS value_raw,
+            sms.role_at_rate,
+            sms.metric_id,
+            sms.student_id
+        FROM step_metric_scores sms
+        JOIN track_steps ts ON ts.step_id = sms.step_id
+        WHERE {' AND '.join(where)}
+        ORDER BY ts.occurred_at ASC
+    """
 
     with get_conn(True) as con:
         cur = con.execute(sql, params)
