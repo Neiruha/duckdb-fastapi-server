@@ -14,6 +14,8 @@ DB_BACKEND = os.getenv("DB_BACKEND", "duckdb")  # 'duckdb' | 'postgres'
 DUCKDB_PATH = os.getenv("DUCKDB_PATH", "/srv/neiruha/lab/app/data/neiruha.duckdb")
 POSTGRES_DSN = os.getenv("POSTGRES_DSN", "postgresql://user:pass@localhost:5432/neiruha")
 
+MINIAPP_BOT_TOKEN = os.getenv("MINIAPP_BOT_TOKEN")
+
 LOG_DIR = os.getenv("LOG_DIR", "/srv/neiruha/lab/app/server/logs")
 LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO").upper()
 

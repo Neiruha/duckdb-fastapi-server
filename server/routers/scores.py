@@ -5,7 +5,7 @@ from typing import List
 
 from fastapi import APIRouter, Depends, Query
 
-from ..middleware.access import require_token
+from ..middleware.access import Caller, require_token
 from ..schemas.scores import ScoreOut, ScoresQueryIn
 from ..services.scores_service import (
     get_scores_by_sets,
@@ -19,7 +19,7 @@ router = APIRouter(prefix="/scores", tags=["scores"])
 @router.get("/track/{track_id}", response_model=List[ScoreOut])
 def scores_by_track(
     track_id: str,
-    role: str = Depends(require_token()),  # noqa: ARG001
+    caller: Caller = Depends(require_token()),  # noqa: ARG001
     student_id: str | None = Query(default=None),
     metric_id: str | None = Query(default=None),
     since: datetime | None = Query(default=None),
@@ -41,7 +41,7 @@ def scores_by_track(
 @router.get("/student/{student_id}", response_model=List[ScoreOut])
 def scores_by_student(
     student_id: str,
-    role: str = Depends(require_token()),  # noqa: ARG001
+    caller: Caller = Depends(require_token()),  # noqa: ARG001
     track_id: str | None = Query(default=None),
     metric_id: str | None = Query(default=None),
     since: datetime | None = Query(default=None),
@@ -63,7 +63,7 @@ def scores_by_student(
 @router.post("/query", response_model=List[ScoreOut])
 def scores_query(
     payload: ScoresQueryIn,
-    role: str = Depends(require_token()),  # noqa: ARG001
+    caller: Caller = Depends(require_token()),  # noqa: ARG001
 ) -> List[ScoreOut]:
     return get_scores_by_sets(
         track_ids=payload.track_ids,
