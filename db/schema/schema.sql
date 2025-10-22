@@ -1,5 +1,5 @@
 CREATE TABLE banned_users(ban_id VARCHAR PRIMARY KEY, user_id VARCHAR, telegram_user_id BIGINT, reason VARCHAR, banned_at TIMESTAMP DEFAULT(CURRENT_TIMESTAMP) NOT NULL);;
-CREATE TABLE client_tokens(token_id VARCHAR PRIMARY KEY, user_id VARCHAR NOT NULL, telegram_user_id BIGINT NOT NULL, token_hash VARCHAR NOT NULL, "role" VARCHAR DEFAULT('client') NOT NULL, issued_at TIMESTAMP DEFAULT(CURRENT_TIMESTAMP) NOT NULL, expires_at TIMESTAMP NOT NULL, revoked_at TIMESTAMP, user_agent VARCHAR, ip_hash VARCHAR, last_used_at TIMESTAMP);;
+CREATE TABLE client_tokens(token_id VARCHAR PRIMARY KEY, user_id VARCHAR NOT NULL, telegram_user_id BIGINT NOT NULL, issued_at TIMESTAMP DEFAULT(CURRENT_TIMESTAMP) NOT NULL, expires_at TIMESTAMP NOT NULL, revoked_at TIMESTAMP, user_agent VARCHAR, ip_hash VARCHAR, payload_json JSON);;
 CREATE TABLE conversion_rules(set_id VARCHAR, from_metric_id VARCHAR, to_metric_id VARCHAR, weight DOUBLE NOT NULL, PRIMARY KEY(set_id, from_metric_id, to_metric_id));;
 CREATE TABLE conversion_sets(set_id VARCHAR PRIMARY KEY, "name" VARCHAR NOT NULL, "scope" VARCHAR NOT NULL, student_id VARCHAR, "version" INTEGER NOT NULL, parent_set_id VARCHAR, is_active BOOLEAN DEFAULT(CAST('f' AS BOOLEAN)) NOT NULL, created_at TIMESTAMP DEFAULT(CURRENT_TIMESTAMP) NOT NULL, updated_at TIMESTAMP DEFAULT(CURRENT_TIMESTAMP) NOT NULL, CHECK(("scope" IN ('global', 'student'))));;
 CREATE TABLE creatures(creature_id VARCHAR PRIMARY KEY, owner_user_id VARCHAR NOT NULL, "name" VARCHAR NOT NULL, persona VARCHAR, avatar_url VARCHAR, is_system BOOLEAN DEFAULT(CAST('f' AS BOOLEAN)) NOT NULL, created_at TIMESTAMP DEFAULT(CURRENT_TIMESTAMP) NOT NULL);;
@@ -51,7 +51,6 @@ CREATE INDEX ix_users_mentor ON users(mentor_user_id);;
 CREATE INDEX ix_users_telegram_name ON users(telegram_login_name);;
 CREATE UNIQUE INDEX ux_banned_tg ON banned_users(telegram_user_id);;
 CREATE UNIQUE INDEX ux_banned_user ON banned_users(user_id);;
-CREATE UNIQUE INDEX ux_client_tokens_hash ON client_tokens(token_hash);;
 CREATE UNIQUE INDEX ux_users_telegram_id ON users(telegram_id);;
 CREATE UNIQUE INDEX ux_users_web_login ON users(web_login);;
 
