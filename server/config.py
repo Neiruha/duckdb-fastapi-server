@@ -25,9 +25,7 @@ if _tokens_env:
         raise RuntimeError("Failed to parse TOKENS_JSON") from exc
 else:
     TOKENS = {
-        "tg_bot_token_abcdef": "server",
-        "miniapp_token_123456": "client",
-        "phil_token_zxcvbnhjaks": "server",
+        "phil_token_zxcvbnhjaks": "server"
     }
 
 SESSION_MAX_TTL_MINUTES = 60 * 24 * 7
