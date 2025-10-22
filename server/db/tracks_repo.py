@@ -100,3 +100,33 @@ def rename_title(track_id: str, title: str) -> Optional[Dict[str, Any]]:
         )
         rows = dictrows(cur)
     return rows[0] if rows else None
+
+
+def get_track_window(track_id: str) -> Optional[Dict[str, Any]]:
+    with get_conn(True) as con:
+        cur = con.execute(
+            """
+            SELECT track_id, start_at, end_at
+            FROM tracks
+            WHERE track_id = ?
+            LIMIT 1
+            """,
+            [track_id],
+        )
+        rows = dictrows(cur)
+    return rows[0] if rows else None
+
+
+def is_teacher(track_id: str, user_id: str) -> bool:
+    with get_conn(True) as con:
+        cur = con.execute(
+            """
+            SELECT 1
+            FROM track_participants
+            WHERE track_id = ? AND user_id = ? AND role_in_track = 'teacher'
+            LIMIT 1
+            """,
+            [track_id, user_id],
+        )
+        row = cur.fetchone()
+    return row is not None
