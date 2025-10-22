@@ -42,6 +42,10 @@ SMOOTH_WEIGHTS = {k: v / total_weight for k, v in SMOOTH_WEIGHTS.items()}
 
 DB_BACKEND = os.getenv("DB_BACKEND", "duckdb")  # 'duckdb' | 'postgres'
 DUCKDB_PATH = os.getenv("DUCKDB_PATH", "/srv/neiruha/lab/app/data/neiruha.duckdb")
+SANDBOX_DUCKDB_PATH = os.getenv(
+    "SANDBOX_DUCKDB_PATH",
+    "/srv/neiruha/lab/app/data/_sandbox.duckdb",
+)
 POSTGRES_DSN = os.getenv("POSTGRES_DSN", "postgresql://user:pass@localhost:5432/neiruha")
 
 MINIAPP_BOT_TOKEN = os.getenv("MINIAPP_BOT_TOKEN")
