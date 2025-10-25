@@ -10,7 +10,7 @@ from ..schemas.users import (
     UserRenameIn,
     UserRenamedOut,
 )
-from ..services.users_service import get_user_info, list_users, rename_user
+from ..services.users_service import get_user_info, list_by_role, list_users, rename_user
 
 router = APIRouter(prefix="/users", tags=["users"])
 
@@ -36,6 +36,33 @@ def user_list(
     offset: int = Query(0, ge=0),
 ) -> UserListOut:
     return list_users(limit, offset)
+
+
+@router.get("/teachers", response_model=UserListOut)
+def user_list_teachers(
+    caller: Caller = Depends(need_server_role),  # noqa: ARG001
+    limit: int = Query(100, ge=1, le=1000),
+    offset: int = Query(0, ge=0),
+) -> UserListOut:
+    return list_by_role("teacher", limit, offset)
+
+
+@router.get("/mentors", response_model=UserListOut)
+def user_list_mentors(
+    caller: Caller = Depends(need_server_role),  # noqa: ARG001
+    limit: int = Query(100, ge=1, le=1000),
+    offset: int = Query(0, ge=0),
+) -> UserListOut:
+    return list_by_role("mentor", limit, offset)
+
+
+@router.get("/students", response_model=UserListOut)
+def user_list_students(
+    caller: Caller = Depends(need_server_role),  # noqa: ARG001
+    limit: int = Query(100, ge=1, le=1000),
+    offset: int = Query(0, ge=0),
+) -> UserListOut:
+    return list_by_role("student", limit, offset)
 
 
 @router.patch("/{user_id}", response_model=UserRenamedOut)
