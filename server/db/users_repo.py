@@ -60,6 +60,23 @@ def get_by_telegram_id(telegram_user_id: int) -> Optional[Dict[str, Any]]:
     return rows[0] if rows else None
 
 
+def get_by_id(user_id: str) -> Optional[Dict[str, Any]]:
+    with get_conn(True) as con:
+        cur = con.execute(
+            """
+            SELECT user_id, display_name, telegram_id, telegram_username,
+                   telegram_login_name, mentor_user_id, frozen, created_at,
+                   updated_at
+            FROM users
+            WHERE user_id = ?
+            LIMIT 1
+            """,
+            [user_id],
+        )
+        rows = dictrows(cur)
+    return rows[0] if rows else None
+
+
 def create_user_for_telegram(
     *,
     telegram_user_id: int,
@@ -178,6 +195,38 @@ def list_users(limit: int, offset: int) -> Dict[str, Any]:
         cur = con.execute(sql)
         items = dictrows(cur)
         total = con.execute("SELECT COUNT(*) FROM users").fetchone()[0]
+    return {"total": total, "items": items}
+
+
+def list_users_by_role(role: str, limit: int, offset: int) -> Dict[str, Any]:
+    with get_conn(True) as con:
+        sql = f"""
+            WITH last_seen AS (
+                SELECT user_id, MAX(created_at) AS last_seen_at
+                FROM sessions
+                GROUP BY user_id
+            )
+            SELECT u.user_id,
+                   u.display_name,
+                   u.telegram_id,
+                   u.telegram_username,
+                   u.web_login,
+                   ls.last_seen_at
+            FROM users u
+            JOIN user_roles ur ON ur.user_id = u.user_id
+            LEFT JOIN last_seen ls ON ls.user_id = u.user_id
+            WHERE ur.role = ?
+            ORDER BY COALESCE(ls.last_seen_at, TIMESTAMP '1970-01-01') DESC, u.created_at DESC
+            LIMIT {limit} OFFSET {offset}
+        """
+        cur = con.execute(sql, [role])
+        items = dictrows(cur)
+        total = (
+            con.execute(
+                "SELECT COUNT(DISTINCT user_id) FROM user_roles WHERE role = ?",
+                [role],
+            ).fetchone()[0]
+        )
     return {"total": total, "items": items}
 
 

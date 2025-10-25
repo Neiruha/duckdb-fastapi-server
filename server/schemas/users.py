@@ -37,6 +37,7 @@ class UserInfoOut(BaseModel):
     telegram_username: str | None = None
     telegram_login_name: str | None = None
     curator: CuratorOut
+    roles: List[str] = Field(default_factory=list)
     active_tracks: List[TrackWithTeachersOut] = Field(default_factory=list)
 
 

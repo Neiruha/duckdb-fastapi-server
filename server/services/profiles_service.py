@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import Any, Dict
+
 from ..db import flags_repo, sessions_repo, tracks_repo, users_repo
 from ..schemas.profiles import ProfileByTelegramOut, ProfileUserOut
 from ..schemas.tracks import TrackSummaryOut
@@ -7,15 +9,15 @@ from ..schemas.users import CuratorOut, TrackTeacherOut, TrackWithTeachersOut
 from ..utils.time import now_utc, to_warsaw_iso
 
 
-def profile_by_telegram(telegram_user_id: int) -> ProfileByTelegramOut:
-    user = users_repo.get_by_telegram_id(telegram_user_id)
-    if not user:
-        return ProfileByTelegramOut()
-
+def _build_profile(user: Dict[str, Any]) -> ProfileByTelegramOut:
     curator_raw = users_repo.get_curator(user.get("mentor_user_id"))
     curator = CuratorOut(**curator_raw) if curator_raw else None
     roles = users_repo.get_roles(user["user_id"])
-    ban = flags_repo.get_ban_by_user(user["user_id"]) or flags_repo.get_ban_by_telegram(telegram_user_id)
+
+    ban = flags_repo.get_ban_by_user(user["user_id"])
+    telegram_id = user.get("telegram_id")
+    if ban is None and telegram_id is not None:
+        ban = flags_repo.get_ban_by_telegram(telegram_id)
 
     now = now_utc()
     tracks_student_raw = tracks_repo.list_by_student(user["user_id"], active_only=True, now=now)
@@ -41,7 +43,7 @@ def profile_by_telegram(telegram_user_id: int) -> ProfileByTelegramOut:
     profile_user = ProfileUserOut(
         user_id=user["user_id"],
         display_name=user["display_name"],
-        telegram_id=user.get("telegram_id"),
+        telegram_id=telegram_id,
         telegram_username=user.get("telegram_username"),
         telegram_login_name=user.get("telegram_login_name"),
         frozen=bool(user.get("frozen")),
@@ -57,3 +59,17 @@ def profile_by_telegram(telegram_user_id: int) -> ProfileByTelegramOut:
         tracks_active_as_teacher=tracks_teacher,
         last_seen_at=last_seen_iso,
     )
+
+
+def profile_by_telegram(telegram_user_id: int) -> ProfileByTelegramOut:
+    user = users_repo.get_by_telegram_id(telegram_user_id)
+    if not user:
+        return ProfileByTelegramOut()
+    return _build_profile(user)
+
+
+def profile_by_user_id(user_id: str) -> ProfileByTelegramOut:
+    user = users_repo.get_by_id(user_id)
+    if not user:
+        return ProfileByTelegramOut()
+    return _build_profile(user)

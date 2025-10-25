@@ -27,6 +27,7 @@ def get_user_info(
 
     curator_raw = users_repo.get_curator(user.get("mentor_user_id"))
     curator = CuratorOut(**curator_raw) if curator_raw else CuratorOut()
+    roles = users_repo.get_roles(user["user_id"])
 
     now = now_utc()
     tracks_raw = tracks_repo.list_by_student(user["user_id"], active_only=True, now=now)
@@ -50,12 +51,32 @@ def get_user_info(
         telegram_username=user.get("telegram_username"),
         telegram_login_name=user.get("telegram_login_name"),
         curator=curator,
+        roles=roles,
         active_tracks=tracks,
     )
 
 
 def list_users(limit: int, offset: int) -> UserListOut:
     data = users_repo.list_users(limit, offset)
+    items = []
+    for item in data["items"]:
+        last_seen = item.get("last_seen_at")
+        last_seen_iso = to_warsaw_iso(last_seen) if last_seen else None
+        items.append(
+            UserListItem(
+                user_id=item["user_id"],
+                display_name=item["display_name"],
+                telegram_id=item.get("telegram_id"),
+                telegram_username=item.get("telegram_username"),
+                web_login=item.get("web_login"),
+                last_seen_at=last_seen_iso,
+            )
+        )
+    return UserListOut(total=data["total"], items=items)
+
+
+def list_by_role(role: str, limit: int, offset: int) -> UserListOut:
+    data = users_repo.list_users_by_role(role, limit, offset)
     items = []
     for item in data["items"]:
         last_seen = item.get("last_seen_at")
