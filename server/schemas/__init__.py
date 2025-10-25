@@ -3,6 +3,7 @@
 from .sessions import SessionConnectIn, SessionOut, SessionRefreshIn, SessionDisconnectIn
 from .flags import FlagsOut
 from .dbalive import DBAliveOut
+from .health import HealthResponse
 from .profiles import ProfileByTelegramOut
 from .users import (
     GetUserInfoIn,
@@ -22,6 +23,7 @@ __all__ = [
     "SessionDisconnectIn",
     "FlagsOut",
     "DBAliveOut",
+    "HealthResponse",
     "ProfileByTelegramOut",
     "GetUserInfoIn",
     "CuratorOut",
