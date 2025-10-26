@@ -70,6 +70,9 @@ def api_root() -> dict:
 def startup_safe_check() -> None:
     emit_config_logs(config_log)
 
+    log.info("=" * 72)
+    log.info("Yoohoo, we are launching...")
+
     build_name = BUILD_NAME or "unknown"
     build_dt = BUILD_DATETIME or "unknown"
     build_by = BUILT_BY or "unknown"
@@ -94,9 +97,20 @@ def startup_safe_check() -> None:
     )
 
     if not SAFE_CHECK_ON_START:
+        log.info("boot safe_check=skipped reason=disabled")
         return
 
-    run_safe_check()
+    log.info("boot safe_check=starting")
+
+    try:
+        run_safe_check()
+    except SystemExit:
+        log.critical("oh, how sad, but I cannot continue working")
+        raise
+    except Exception:
+        log.exception("boot safe_check=failed")
+        log.critical("oh, how sad, but I cannot continue working")
+        raise SystemExit(1)
 
 
 def run_safe_check() -> None:
