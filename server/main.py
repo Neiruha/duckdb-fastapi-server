@@ -30,6 +30,7 @@ config_log = get_logger("config")
 
 app = FastAPI(
     title=APP_TITLE,
+    root_path="/archlab",
     docs_url="/api/docs",
     redoc_url=None,
     openapi_url="/api/openapi.json",
