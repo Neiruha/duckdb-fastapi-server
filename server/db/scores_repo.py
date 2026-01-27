@@ -7,26 +7,6 @@ from .connection import dictrows, get_conn
 from ..utils.time import ensure_naive_utc
 
 
-def _clamp_score(value: Any) -> float:
-    try:
-        numeric = float(value)
-    except (TypeError, ValueError):
-        return 0.0
-    if numeric < 0:
-        return 0.0
-    if numeric > 100:
-        return 100.0
-    return numeric
-
-
-def _with_smoothing(rows: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
-    for row in rows:
-        raw_value = row.get("value_raw")
-        row["value_raw"] = float(raw_value) if raw_value is not None else 0.0
-        row["value_smooth"] = _clamp_score(raw_value)
-    return rows
-
-
 def list_by_track(
     track_id: str,
     *,
@@ -76,7 +56,7 @@ def list_by_track(
 
     with get_conn(True) as con:
         cur = con.execute(sql, params)
-        return _with_smoothing(dictrows(cur))
+        return dictrows(cur)
 
 
 def list_by_student(
@@ -128,7 +108,7 @@ def list_by_student(
 
     with get_conn(True) as con:
         cur = con.execute(sql, params)
-        return _with_smoothing(dictrows(cur))
+        return dictrows(cur)
 
 
 def list_by_sets(
@@ -195,7 +175,7 @@ def list_by_sets(
 
     with get_conn(True) as con:
         cur = con.execute(sql, params)
-        return _with_smoothing(dictrows(cur))
+        return dictrows(cur)
 
 
 def list_by_user(
@@ -243,4 +223,4 @@ def list_by_user(
 
     with get_conn(True) as con:
         cur = con.execute(sql, params)
-        return _with_smoothing(dictrows(cur))
+        return dictrows(cur)
