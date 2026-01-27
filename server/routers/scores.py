@@ -6,12 +6,12 @@ from typing import List
 from fastapi import APIRouter, Depends, Query
 
 from ..middleware.access import Caller, require_token
-from ..schemas.scores import ScoreOut, ScoresQueryIn, SmoothedSeriesOut
+from ..schemas.scores import ScoreOut, ScoresQueryIn
 from ..services.scores_service import (
     get_scores_by_sets,
     get_scores_by_student,
     get_scores_by_track,
-    get_smoothed_series,
+    get_scores_by_user,
 )
 
 router = APIRouter(prefix="/scores", tags=["scores"])
@@ -77,24 +77,21 @@ def scores_query(
     )
 
 
-@router.get("/smoothed-series", response_model=SmoothedSeriesOut)
-def smoothed_series(
-    track_id: str = Query(...),
-    caller: Caller = Depends(require_token(allow_client=True)),
-    student_id: str | None = Query(default=None),
+@router.get("/user/{user_id}", response_model=List[ScoreOut])
+def scores_by_user(
+    user_id: str,
+    caller: Caller = Depends(require_token()),  # noqa: ARG001
     metric_id: str | None = Query(default=None),
-    interval: str | None = Query(default=None),
-    max_points: int | None = Query(default=None, ge=1, le=2000),
     since: datetime | None = Query(default=None),
     until: datetime | None = Query(default=None),
-) -> SmoothedSeriesOut:
-    return get_smoothed_series(
-        caller=caller,
-        track_id=track_id,
-        student_id=student_id,
+    limit: int = Query(default=200, ge=1, le=2000),
+    offset: int = Query(default=0, ge=0),
+) -> List[ScoreOut]:
+    return get_scores_by_user(
+        user_id,
         metric_id=metric_id,
         since=since,
         until=until,
-        interval=interval,
-        max_points=max_points,
+        limit=limit,
+        offset=offset,
     )

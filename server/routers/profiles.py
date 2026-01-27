@@ -1,10 +1,14 @@
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 
 from ..middleware.access import Caller, require_token
-from ..schemas.profiles import ProfileByTelegramOut
-from ..services.profiles_service import profile_by_telegram, profile_by_user_id
+from ..schemas.profiles import ProfileByTelegramOut, ProfileResponseOut, ProfileType
+from ..services.profiles_service import (
+    profile_by_telegram,
+    profile_by_user_id,
+    profile_by_user_type,
+)
 
 router = APIRouter(prefix="/profiles", tags=["profiles"])
 
@@ -17,8 +21,17 @@ def profile_by_telegram_route(
     return profile_by_telegram(telegram_user_id)
 
 
-@router.get("/by-user/{user_id}", response_model=ProfileByTelegramOut)
+@router.get("/by-user/{user_id}", response_model=ProfileResponseOut)
 def profile_by_user_route(
+    user_id: str,
+    caller: Caller = Depends(require_token(allow_client=True)),  # noqa: ARG001
+    profile_type: ProfileType = Query(default="full"),
+) -> ProfileResponseOut:
+    return profile_by_user_type(user_id, profile_type)
+
+
+@router.get("/legacy/by-user/{user_id}", response_model=ProfileByTelegramOut)
+def profile_by_user_legacy_route(
     user_id: str,
     caller: Caller = Depends(require_token(allow_client=True)),  # noqa: ARG001
 ) -> ProfileByTelegramOut:

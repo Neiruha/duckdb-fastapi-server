@@ -37,40 +37,39 @@ def list_by_track(
     limit: int,
     offset: int,
 ) -> List[Dict[str, Any]]:
-    where = ["ts.track_id = ?"]
+    where = ["s.track_id = ?"]
     params: List[Any] = [track_id]
 
     if student_id:
-        where.append("sms.student_id = ?")
+        where.append("s.student_id = ?")
         params.append(student_id)
     if metric_id:
-        where.append("sms.metric_id = ?")
+        where.append("s.metric_id = ?")
         params.append(metric_id)
     if since:
-        where.append("ts.occurred_at >= ?")
+        where.append("s.measured_at >= ?")
         params.append(ensure_naive_utc(since))
     if until:
-        where.append("ts.occurred_at < ?")
+        where.append("s.measured_at < ?")
         params.append(ensure_naive_utc(until))
 
     sql = f"""
         SELECT
-            sms.score_id,
-            sms.step_id,
-            ts.track_id,
-            sms.student_id,
-            sms.metric_id,
+            s.score_id,
+            s.step_id,
+            s.track_id,
+            s.student_id,
+            s.metric_id,
             m.name AS metric_name,
-            sms.value AS value_raw,
-            sms.rater_user_id,
-            sms.role_at_rate,
-            sms.comment,
-            ts.occurred_at
-        FROM step_metric_scores sms
-        JOIN track_steps ts ON ts.step_id = sms.step_id
-        LEFT JOIN metrics m ON m.metric_id = sms.metric_id
+            COALESCE(s.raw_value, s.value) AS value_raw,
+            s.rater_user_id,
+            s.role_at_rate,
+            s.comment,
+            s.measured_at AS occurred_at
+        FROM scores s
+        LEFT JOIN metrics m ON m.metric_id = s.metric_id
         WHERE {' AND '.join(where)}
-        ORDER BY ts.occurred_at DESC
+        ORDER BY s.measured_at DESC
         LIMIT ? OFFSET ?
     """
     params.extend([limit, offset])
@@ -90,40 +89,39 @@ def list_by_student(
     limit: int,
     offset: int,
 ) -> List[Dict[str, Any]]:
-    where = ["sms.student_id = ?"]
+    where = ["s.student_id = ?"]
     params: List[Any] = [student_id]
 
     if track_id:
-        where.append("ts.track_id = ?")
+        where.append("s.track_id = ?")
         params.append(track_id)
     if metric_id:
-        where.append("sms.metric_id = ?")
+        where.append("s.metric_id = ?")
         params.append(metric_id)
     if since:
-        where.append("ts.occurred_at >= ?")
+        where.append("s.measured_at >= ?")
         params.append(ensure_naive_utc(since))
     if until:
-        where.append("ts.occurred_at < ?")
+        where.append("s.measured_at < ?")
         params.append(ensure_naive_utc(until))
 
     sql = f"""
         SELECT
-            sms.score_id,
-            sms.step_id,
-            ts.track_id,
-            sms.student_id,
-            sms.metric_id,
+            s.score_id,
+            s.step_id,
+            s.track_id,
+            s.student_id,
+            s.metric_id,
             m.name AS metric_name,
-            sms.value AS value_raw,
-            sms.rater_user_id,
-            sms.role_at_rate,
-            sms.comment,
-            ts.occurred_at
-        FROM step_metric_scores sms
-        JOIN track_steps ts ON ts.step_id = sms.step_id
-        LEFT JOIN metrics m ON m.metric_id = sms.metric_id
+            COALESCE(s.raw_value, s.value) AS value_raw,
+            s.rater_user_id,
+            s.role_at_rate,
+            s.comment,
+            s.measured_at AS occurred_at
+        FROM scores s
+        LEFT JOIN metrics m ON m.metric_id = s.metric_id
         WHERE {' AND '.join(where)}
-        ORDER BY ts.occurred_at DESC
+        ORDER BY s.measured_at DESC
         LIMIT ? OFFSET ?
     """
     params.extend([limit, offset])
@@ -155,45 +153,44 @@ def list_by_sets(
 
     if track_ids:
         placeholders = ", ".join(["?"] * len(track_ids))
-        where.append(f"ts.track_id IN ({placeholders})")
+        where.append(f"s.track_id IN ({placeholders})")
         params.extend(track_ids)
     if student_ids:
         placeholders = ", ".join(["?"] * len(student_ids))
-        where.append(f"sms.student_id IN ({placeholders})")
+        where.append(f"s.student_id IN ({placeholders})")
         params.extend(student_ids)
     if metric_ids:
         placeholders = ", ".join(["?"] * len(metric_ids))
-        where.append(f"sms.metric_id IN ({placeholders})")
+        where.append(f"s.metric_id IN ({placeholders})")
         params.extend(metric_ids)
     if since:
-        where.append("ts.occurred_at >= ?")
+        where.append("s.measured_at >= ?")
         params.append(ensure_naive_utc(since))
     if until:
-        where.append("ts.occurred_at < ?")
+        where.append("s.measured_at < ?")
         params.append(ensure_naive_utc(until))
 
     sql = """
         SELECT
-            sms.score_id,
-            sms.step_id,
-            ts.track_id,
-            sms.student_id,
-            sms.metric_id,
+            s.score_id,
+            s.step_id,
+            s.track_id,
+            s.student_id,
+            s.metric_id,
             m.name AS metric_name,
-            sms.value AS value_raw,
-            sms.rater_user_id,
-            sms.role_at_rate,
-            sms.comment,
-            ts.occurred_at
-        FROM step_metric_scores sms
-        JOIN track_steps ts ON ts.step_id = sms.step_id
-        LEFT JOIN metrics m ON m.metric_id = sms.metric_id
+            COALESCE(s.raw_value, s.value) AS value_raw,
+            s.rater_user_id,
+            s.role_at_rate,
+            s.comment,
+            s.measured_at AS occurred_at
+        FROM scores s
+        LEFT JOIN metrics m ON m.metric_id = s.metric_id
     """
 
     if where:
         sql += " WHERE " + " AND ".join(where)
 
-    sql += " ORDER BY ts.occurred_at DESC LIMIT ? OFFSET ?"
+    sql += " ORDER BY s.measured_at DESC LIMIT ? OFFSET ?"
     params.extend([limit, offset])
 
     with get_conn(True) as con:
@@ -201,43 +198,49 @@ def list_by_sets(
         return _with_smoothing(dictrows(cur))
 
 
-def list_for_series(
-    track_id: str,
+def list_by_user(
+    user_id: str,
     *,
-    student_id: Optional[str] = None,
     metric_id: Optional[str] = None,
     since: Optional[datetime] = None,
     until: Optional[datetime] = None,
+    limit: int,
+    offset: int,
 ) -> List[Dict[str, Any]]:
-    where = ["ts.track_id = ?"]
-    params: List[Any] = [track_id]
+    where = ["s.student_id = ?"]
+    params: List[Any] = [user_id]
 
-    if student_id:
-        where.append("sms.student_id = ?")
-        params.append(student_id)
     if metric_id:
-        where.append("sms.metric_id = ?")
+        where.append("s.metric_id = ?")
         params.append(metric_id)
     if since:
-        where.append("ts.occurred_at >= ?")
+        where.append("s.measured_at >= ?")
         params.append(ensure_naive_utc(since))
     if until:
-        where.append("ts.occurred_at < ?")
+        where.append("s.measured_at < ?")
         params.append(ensure_naive_utc(until))
 
     sql = f"""
         SELECT
-            ts.occurred_at,
-            sms.value AS value_raw,
-            sms.role_at_rate,
-            sms.metric_id,
-            sms.student_id
-        FROM step_metric_scores sms
-        JOIN track_steps ts ON ts.step_id = sms.step_id
+            s.score_id,
+            s.step_id,
+            s.track_id,
+            s.student_id,
+            s.metric_id,
+            m.name AS metric_name,
+            COALESCE(s.raw_value, s.value) AS value_raw,
+            s.rater_user_id,
+            s.role_at_rate,
+            s.comment,
+            s.measured_at AS occurred_at
+        FROM scores s
+        LEFT JOIN metrics m ON m.metric_id = s.metric_id
         WHERE {' AND '.join(where)}
-        ORDER BY ts.occurred_at ASC
+        ORDER BY s.measured_at DESC
+        LIMIT ? OFFSET ?
     """
+    params.extend([limit, offset])
 
     with get_conn(True) as con:
         cur = con.execute(sql, params)
-        return dictrows(cur)
+        return _with_smoothing(dictrows(cur))

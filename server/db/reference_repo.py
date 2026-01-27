@@ -12,7 +12,10 @@ def list_metrics() -> List[Dict[str, object]]:
             SELECT
                 metric_id AS id,
                 name,
-                metric_type,
+                kind,
+                system,
+                code,
+                members_json AS members,
                 definition AS description
             FROM metrics
             ORDER BY name ASC
@@ -25,9 +28,9 @@ def list_metric_types() -> List[Dict[str, object]]:
     with get_conn(True) as con:
         cur = con.execute(
             """
-            SELECT metric_type AS id, description
-            FROM metric_types
-            ORDER BY description ASC
+            SELECT DISTINCT kind AS id
+            FROM metrics
+            ORDER BY kind ASC
             """
         )
         return dictrows(cur)
