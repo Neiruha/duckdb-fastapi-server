@@ -8,7 +8,7 @@ from pydantic import BaseModel, Field
 
 class ScoreOut(BaseModel):
     score_id: str
-    step_id: str
+    step_id: str | None = None
     track_id: str
     student_id: str
     metric_id: str
@@ -29,16 +29,3 @@ class ScoresQueryIn(BaseModel):
     until: Optional[datetime] = None
     limit: int = Field(200, ge=1, le=2000)
     offset: int = Field(0, ge=0)
-
-
-class SmoothedSeriesPoint(BaseModel):
-    t: str
-    self_weighted: float
-    teacher_weighted: float
-    mentor_weighted: float
-    composite: float
-
-
-class SmoothedSeriesOut(BaseModel):
-    interval: str
-    points: List[SmoothedSeriesPoint]

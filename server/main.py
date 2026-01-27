@@ -199,8 +199,8 @@ def run_safe_check() -> None:
         )
         log.info("bootcheck metric_groups_ready=true")
 
-        columns = {row[1] for row in con.execute("PRAGMA table_info('step_metric_scores')").fetchall()}
-        value_column = "value_raw" if "value_raw" in columns else "value"
+        columns = {row[1] for row in con.execute("PRAGMA table_info('scores')").fetchall()}
+        value_column = "raw_value" if "raw_value" in columns else "value"
         stats_query = f"""
             SELECT
               mg.group_id,
@@ -210,7 +210,7 @@ def run_safe_check() -> None:
               MAX(s.{value_column})   AS v_max
             FROM metric_groups mg
             JOIN metric_group_members gm ON gm.group_id = mg.group_id
-            JOIN step_metric_scores s    ON s.metric_id = gm.metric_id
+            JOIN scores s    ON s.metric_id = gm.metric_id
             GROUP BY mg.group_id
         """
         stats_rows = con.execute(stats_query).fetchall()

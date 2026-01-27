@@ -8,13 +8,15 @@ from pydantic import BaseModel
 class MetricOut(BaseModel):
     id: str
     name: str
-    metric_type: str
+    kind: str
+    system: Optional[str] = None
+    code: Optional[str] = None
+    members: Optional[object] = None
     description: Optional[str] = None
 
 
 class MetricTypeOut(BaseModel):
     id: str
-    description: Optional[str] = None
 
 
 class TrackStepTypeOut(BaseModel):

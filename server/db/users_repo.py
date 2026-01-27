@@ -48,8 +48,8 @@ def get_by_telegram_id(telegram_user_id: int) -> Optional[Dict[str, Any]]:
         cur = con.execute(
             """
             SELECT user_id, display_name, telegram_id, telegram_username,
-                   telegram_login_name, mentor_user_id, frozen, created_at,
-                   updated_at
+                   telegram_login_name, telegram_photo_url, mentor_user_id,
+                   frozen, created_at, updated_at
             FROM users
             WHERE telegram_id = ?
             LIMIT 1
@@ -65,8 +65,8 @@ def get_by_id(user_id: str) -> Optional[Dict[str, Any]]:
         cur = con.execute(
             """
             SELECT user_id, display_name, telegram_id, telegram_username,
-                   telegram_login_name, mentor_user_id, frozen, created_at,
-                   updated_at
+                   telegram_login_name, telegram_photo_url, mentor_user_id,
+                   frozen, created_at, updated_at
             FROM users
             WHERE user_id = ?
             LIMIT 1
