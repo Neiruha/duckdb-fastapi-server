@@ -123,6 +123,14 @@ def run_safe_check() -> None:
     log.info("bootcheck tokens_ok=true count=%s", len(tokens))
 
     with get_conn(read_only=False) as con:
+        required_tables = ("users", "metrics", "tracks", "scores")
+        for table in required_tables:
+            columns = con.execute(f"PRAGMA table_info('{table}')").fetchall()
+            if not columns:
+                log.critical("bootcheck table_missing table=%s", table)
+                sys.exit(1)
+            log.info("bootcheck table_present table=%s", table)
+
         admin_count = con.execute("SELECT COUNT(*) FROM user_roles WHERE role='admin'").fetchone()[0]
         if not admin_count:
             log.critical("bootcheck admin_present=false")
@@ -154,85 +162,19 @@ def run_safe_check() -> None:
                 "UPDATE users SET last_connected = current_timestamp WHERE user_id = ?",
                 [DB_SERVER_USER],
             )
-            revoked_result = con.execute(
-                "UPDATE sessions SET revoked_at = current_timestamp WHERE revoked_at IS NULL",
-            )
-            deleted_result = con.execute(
-                "DELETE FROM sessions WHERE expires_at < current_timestamp",
-            )
             con.execute("COMMIT")
         except Exception:
             con.execute("ROLLBACK")
             raise
 
-        revoked_count = getattr(revoked_result, "rowcount", 0) or 0
-        deleted_count = getattr(deleted_result, "rowcount", 0) or 0
         log.info(
-            "bootcheck db_write_ok=true user=%s sessions_revoked=%s sessions_deleted=%s",
+            "bootcheck db_write_ok=true user=%s",
             DB_SERVER_USER,
-            revoked_count,
-            deleted_count,
         )
-
-        con.execute(
-            """
-            CREATE TABLE IF NOT EXISTS metric_groups(
-              group_id VARCHAR PRIMARY KEY,
-              name VARCHAR NOT NULL,
-              description VARCHAR,
-              created_at TIMESTAMP DEFAULT (current_timestamp) NOT NULL,
-              element_code VARCHAR,
-              element_ru VARCHAR
-            )
-            """
-        )
-        con.execute(
-            """
-            CREATE TABLE IF NOT EXISTS metric_group_members(
-              group_id VARCHAR,
-              metric_id VARCHAR,
-              weight DOUBLE NOT NULL,
-              PRIMARY KEY (group_id, metric_id),
-              CHECK (weight >= 0 AND weight <= 1)
-            )
-            """
-        )
-        log.info("bootcheck metric_groups_ready=true")
-
-        columns = {row[1] for row in con.execute("PRAGMA table_info('scores')").fetchall()}
-        value_column = "raw_value" if "raw_value" in columns else "value"
-        stats_query = f"""
-            SELECT
-              mg.group_id,
-              COUNT(s.{value_column}) AS n,
-              MIN(s.{value_column})   AS v_min,
-              AVG(s.{value_column})   AS v_avg,
-              MAX(s.{value_column})   AS v_max
-            FROM metric_groups mg
-            JOIN metric_group_members gm ON gm.group_id = mg.group_id
-            JOIN scores s    ON s.metric_id = gm.metric_id
-            GROUP BY mg.group_id
-        """
-        stats_rows = con.execute(stats_query).fetchall()
-
-        if not stats_rows:
-            log.info("bootcheck metric_group_stats none=true")
-        else:
-            for group_id, n, v_min, v_avg, v_max in stats_rows:
-                log.info(
-                    "bootcheck metric_group_stats group=%s n=%s min=%s avg=%s max=%s",
-                    group_id,
-                    n,
-                    v_min,
-                    v_avg,
-                    v_max,
-                )
 
         log.info(
-            "bootcheck result=ok tokens=true admin=true metrics=%s db_write=true sessions_revoked=%s sessions_deleted=%s",
+            "bootcheck result=ok tokens=true admin=true metrics=%s db_write=true",
             metrics_count,
-            revoked_count,
-            deleted_count,
         )
 
 

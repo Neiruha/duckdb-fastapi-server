@@ -14,7 +14,6 @@ class ScoreOut(BaseModel):
     metric_id: str
     metric_name: Optional[str] = None
     value_raw: float
-    value_smooth: float
     rater_user_id: str
     role_at_rate: Optional[str] = None
     comment: Optional[str] = None
