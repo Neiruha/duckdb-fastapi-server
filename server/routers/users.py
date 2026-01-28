@@ -1,32 +1,12 @@
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, Query
 
-from ..middleware.access import Caller, need_server_role, require_token
-from ..schemas.users import (
-    GetUserInfoIn,
-    UserInfoOut,
-    UserListOut,
-    UserRenameIn,
-    UserRenamedOut,
-)
-from ..services.users_service import get_user_info, list_by_role, list_users, rename_user
+from ..middleware.access import Caller, need_server_role
+from ..schemas.users import UserListOut
+from ..services.users_service import list_by_role, list_users
 
 router = APIRouter(prefix="/users", tags=["users"])
-
-
-@router.post("/info", response_model=UserInfoOut)
-def user_info(payload: GetUserInfoIn, caller: Caller = Depends(require_token())) -> UserInfoOut:  # noqa: ARG001
-    if not any([payload.user_id, payload.telegram_user_id, payload.telegram_user_name]):
-        raise HTTPException(status_code=400, detail="Provide one of: user_id | telegram_user_id | telegram_user_name")
-    data = get_user_info(
-        user_id=payload.user_id,
-        telegram_user_id=payload.telegram_user_id,
-        telegram_user_name=payload.telegram_user_name,
-    )
-    if not data:
-        raise HTTPException(status_code=404, detail="User not found")
-    return data
 
 
 @router.get("", response_model=UserListOut)
@@ -34,44 +14,8 @@ def user_list(
     caller: Caller = Depends(need_server_role),  # noqa: ARG001
     limit: int = Query(100, ge=1, le=1000),
     offset: int = Query(0, ge=0),
+    role: str | None = Query(default=None),
 ) -> UserListOut:
+    if role:
+        return list_by_role(role, limit, offset)
     return list_users(limit, offset)
-
-
-@router.get("/teachers", response_model=UserListOut)
-def user_list_teachers(
-    caller: Caller = Depends(need_server_role),  # noqa: ARG001
-    limit: int = Query(100, ge=1, le=1000),
-    offset: int = Query(0, ge=0),
-) -> UserListOut:
-    return list_by_role("teacher", limit, offset)
-
-
-@router.get("/mentors", response_model=UserListOut)
-def user_list_mentors(
-    caller: Caller = Depends(need_server_role),  # noqa: ARG001
-    limit: int = Query(100, ge=1, le=1000),
-    offset: int = Query(0, ge=0),
-) -> UserListOut:
-    return list_by_role("mentor", limit, offset)
-
-
-@router.get("/students", response_model=UserListOut)
-def user_list_students(
-    caller: Caller = Depends(need_server_role),  # noqa: ARG001
-    limit: int = Query(100, ge=1, le=1000),
-    offset: int = Query(0, ge=0),
-) -> UserListOut:
-    return list_by_role("student", limit, offset)
-
-
-@router.patch("/{user_id}", response_model=UserRenamedOut)
-def user_rename(
-    user_id: str,
-    payload: UserRenameIn,
-    caller: Caller = Depends(need_server_role),  # noqa: ARG001
-) -> UserRenamedOut:
-    data = rename_user(user_id, payload.display_name)
-    if not data:
-        raise HTTPException(status_code=404, detail="User not found")
-    return data

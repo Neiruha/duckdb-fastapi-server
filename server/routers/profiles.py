@@ -6,7 +6,6 @@ from ..middleware.access import Caller, require_token
 from ..schemas.profiles import ProfileByTelegramOut, ProfileResponseOut, ProfileType
 from ..services.profiles_service import (
     profile_by_telegram,
-    profile_by_user_id,
     profile_by_user_type,
 )
 
@@ -28,11 +27,3 @@ def profile_by_user_route(
     profile_type: ProfileType = Query(default="full"),
 ) -> ProfileResponseOut:
     return profile_by_user_type(user_id, profile_type)
-
-
-@router.get("/legacy/by-user/{user_id}", response_model=ProfileByTelegramOut)
-def profile_by_user_legacy_route(
-    user_id: str,
-    caller: Caller = Depends(require_token(allow_client=True)),  # noqa: ARG001
-) -> ProfileByTelegramOut:
-    return profile_by_user_id(user_id)

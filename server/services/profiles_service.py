@@ -77,13 +77,6 @@ def profile_by_telegram(telegram_user_id: int) -> ProfileByTelegramOut:
     return _build_profile(user)
 
 
-def profile_by_user_id(user_id: str) -> ProfileByTelegramOut:
-    user = users_repo.get_by_id(user_id)
-    if not user:
-        return ProfileByTelegramOut()
-    return _build_profile(user)
-
-
 def profile_by_user_type(user_id: str, profile_type: ProfileType) -> ProfileResponseOut:
     if profile_type in {"charts", "disc_profile"}:
         raise HTTPException(status_code=501, detail=f"Profile type '{profile_type}' is planned but not implemented yet.")

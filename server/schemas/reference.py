@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Optional
+from typing import Any, Optional
 
 from pydantic import BaseModel
 
@@ -32,3 +32,14 @@ class SysEventTypeOut(BaseModel):
 class MessageTypeOut(BaseModel):
     id: str
     description: Optional[str] = None
+
+
+class RefRequestIn(BaseModel):
+    op: str
+    params: dict[str, Any] | None = None
+
+
+class RefResponseOut(BaseModel):
+    ok: bool
+    op: str
+    data: Any

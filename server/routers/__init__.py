@@ -8,11 +8,10 @@ from . import (
     flags,
     health,
     profiles,
-    reference,
+    ref,
     scores,
     select,
     sessions,
-    tracks,
     users,
 )
 
@@ -26,9 +25,8 @@ def get_api_router() -> APIRouter:
     router.include_router(sessions.router, prefix=API_PREFIX)
     router.include_router(flags.router, prefix=API_PREFIX)
     router.include_router(profiles.router, prefix=API_PREFIX)
-    router.include_router(reference.router, prefix=API_PREFIX)
+    router.include_router(ref.router, prefix=API_PREFIX)
     router.include_router(scores.router, prefix=API_PREFIX)
     router.include_router(select.router, prefix=API_PREFIX)
-    router.include_router(tracks.router, prefix=API_PREFIX)
     router.include_router(users.router, prefix=API_PREFIX)
     return router
