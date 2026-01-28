@@ -36,6 +36,14 @@ def _normalize_row(row: Dict[str, Any]) -> Dict[str, Any]:
     return normalized
 
 
+def _sys_event_context(context: str, *, caller: Caller, actor_user_id: Optional[str]) -> str:
+    if caller.kind == "server":
+        if actor_user_id:
+            return f"{context} via=server_token"
+        return f"{context} service_call=true"
+    return context
+
+
 def list_inbox(
     *,
     caller: Caller,
@@ -80,24 +88,25 @@ def list_sent(
     return [MessageOut(**_normalize_row(row)) for row in rows]
 
 
-def send_message(*, caller: Caller, payload: MessageSendIn) -> MessageSendOut:
+def send_message(*, caller: Caller, actor_user_id: str, payload: MessageSendIn) -> MessageSendOut:
     message_type = payload.message_type or "text"
     recipient = users_repo.get_by_telegram_id(payload.to_telegram_user_id)
     if not recipient:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Recipient not found")
 
-    sender_user_id: Optional[str] = None
     if caller.kind == "client":
         if not caller.user_id:
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Client token required")
-        sender_user_id = caller.user_id
+        if actor_user_id != caller.user_id:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Client token required")
     elif caller.kind == "server":
-        sender_user_id = caller.user_id
+        if not actor_user_id:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Missing X-Act-As-*")
     else:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Unsupported token")
 
     inserted = messages_repo.insert_message(
-        sender_user_id=sender_user_id,
+        sender_user_id=actor_user_id,
         recipient_user_id=recipient["user_id"],
         recipient_telegram_user_id=recipient.get("telegram_id"),
         message_type=message_type,
@@ -107,40 +116,35 @@ def send_message(*, caller: Caller, payload: MessageSendIn) -> MessageSendOut:
 
     write_sys_event(
         event_type="message_sent",
-        actor_user_id=sender_user_id,
+        actor_user_id=actor_user_id,
         subject_user_id=recipient["user_id"],
-        context="messages/send",
+        context=_sys_event_context("messages/send", caller=caller, actor_user_id=actor_user_id),
     )
 
     return MessageSendOut(**inserted)
 
 
-def mark_read(*, caller: Caller, payload: MessagesMarkReadIn) -> MessagesMarkReadOut:
+def mark_read(*, caller: Caller, actor_user_id: str, payload: MessagesMarkReadIn) -> MessagesMarkReadOut:
     if caller.kind == "client":
         if not caller.user_id:
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Client token required")
-        updated = messages_repo.mark_read(
-            message_ids=payload.message_ids,
-            recipient_user_id=caller.user_id,
+        if actor_user_id != caller.user_id:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Client token required")
+    elif caller.kind == "server":
+        if not actor_user_id:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Missing X-Act-As-*")
+    else:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Unsupported token")
+
+    updated = messages_repo.mark_read(
+        message_ids=payload.message_ids,
+        recipient_user_id=actor_user_id,
+    )
+    if updated:
+        write_sys_event(
+            event_type="message_read",
+            actor_user_id=actor_user_id,
+            subject_user_id=actor_user_id,
+            context=_sys_event_context("messages/mark-read", caller=caller, actor_user_id=actor_user_id),
         )
-        if updated:
-            write_sys_event(
-                event_type="message_read",
-                actor_user_id=caller.user_id,
-                subject_user_id=caller.user_id,
-                context="messages/mark-read",
-            )
-        return MessagesMarkReadOut(updated=updated)
-
-    if caller.kind == "server":
-        updated = messages_repo.mark_read(message_ids=payload.message_ids, recipient_user_id=None)
-        if updated:
-            write_sys_event(
-                event_type="message_read",
-                actor_user_id=None,
-                subject_user_id=None,
-                context="messages/mark-read/server",
-            )
-        return MessagesMarkReadOut(updated=updated)
-
-    raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Unsupported token")
+    return MessagesMarkReadOut(updated=updated)
