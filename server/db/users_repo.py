@@ -175,7 +175,7 @@ def set_frozen(user_id: str, frozen: bool) -> None:
 
 def list_users(limit: int, offset: int) -> Dict[str, Any]:
     with get_conn(True) as con:
-        sql = f"""
+        sql = """
             WITH last_seen AS (
                 SELECT user_id, MAX(created_at) AS last_seen_at
                 FROM sessions
@@ -190,9 +190,9 @@ def list_users(limit: int, offset: int) -> Dict[str, Any]:
             FROM users u
             LEFT JOIN last_seen ls ON ls.user_id = u.user_id
             ORDER BY COALESCE(ls.last_seen_at, TIMESTAMP '1970-01-01') DESC, u.created_at DESC
-            LIMIT {limit} OFFSET {offset}
+            LIMIT ? OFFSET ?
         """
-        cur = con.execute(sql)
+        cur = con.execute(sql, [limit, offset])
         items = dictrows(cur)
         total = con.execute("SELECT COUNT(*) FROM users").fetchone()[0]
     return {"total": total, "items": items}
@@ -200,7 +200,7 @@ def list_users(limit: int, offset: int) -> Dict[str, Any]:
 
 def list_users_by_role(role: str, limit: int, offset: int) -> Dict[str, Any]:
     with get_conn(True) as con:
-        sql = f"""
+        sql = """
             WITH last_seen AS (
                 SELECT user_id, MAX(created_at) AS last_seen_at
                 FROM sessions
@@ -217,9 +217,9 @@ def list_users_by_role(role: str, limit: int, offset: int) -> Dict[str, Any]:
             LEFT JOIN last_seen ls ON ls.user_id = u.user_id
             WHERE ur.role = ?
             ORDER BY COALESCE(ls.last_seen_at, TIMESTAMP '1970-01-01') DESC, u.created_at DESC
-            LIMIT {limit} OFFSET {offset}
+            LIMIT ? OFFSET ?
         """
-        cur = con.execute(sql, [role])
+        cur = con.execute(sql, [role, limit, offset])
         items = dictrows(cur)
         total = (
             con.execute(
