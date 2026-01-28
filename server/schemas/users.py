@@ -2,13 +2,7 @@ from __future__ import annotations
 
 from typing import List
 
-from pydantic import BaseModel, Field, constr
-
-
-class GetUserInfoIn(BaseModel):
-    telegram_user_id: int | None = None
-    telegram_user_name: str | None = None
-    user_id: str | None = None
+from pydantic import BaseModel, Field
 
 
 class TrackTeacherOut(BaseModel):
@@ -30,17 +24,6 @@ class CuratorOut(BaseModel):
     telegram_username: str | None = None
 
 
-class UserInfoOut(BaseModel):
-    user_id: str
-    display_name: str
-    telegram_id: int | None = None
-    telegram_username: str | None = None
-    telegram_login_name: str | None = None
-    curator: CuratorOut
-    roles: List[str] = Field(default_factory=list)
-    active_tracks: List[TrackWithTeachersOut] = Field(default_factory=list)
-
-
 class UserListItem(BaseModel):
     user_id: str
     display_name: str
@@ -53,12 +36,3 @@ class UserListItem(BaseModel):
 class UserListOut(BaseModel):
     total: int
     items: List[UserListItem]
-
-
-class UserRenameIn(BaseModel):
-    display_name: constr(strip_whitespace=True, min_length=1)
-
-
-class UserRenamedOut(BaseModel):
-    user_id: str
-    display_name: str

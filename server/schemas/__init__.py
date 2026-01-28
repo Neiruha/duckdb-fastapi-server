@@ -6,11 +6,9 @@ from .dbalive import DBAliveOut
 from .health import HealthResponse
 from .profiles import ProfileByTelegramOut
 from .users import (
-    GetUserInfoIn,
     CuratorOut,
     TrackTeacherOut,
     TrackWithTeachersOut,
-    UserInfoOut,
     UserListItem,
     UserListOut,
 )
@@ -25,11 +23,9 @@ __all__ = [
     "DBAliveOut",
     "HealthResponse",
     "ProfileByTelegramOut",
-    "GetUserInfoIn",
     "CuratorOut",
     "TrackTeacherOut",
     "TrackWithTeachersOut",
-    "UserInfoOut",
     "UserListItem",
     "UserListOut",
     "TrackSummaryOut",
