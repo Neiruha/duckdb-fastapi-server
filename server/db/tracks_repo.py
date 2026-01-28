@@ -49,22 +49,6 @@ def list_by_student(user_id: str, active_only: bool, now: datetime) -> List[Dict
     return rows
 
 
-def list_active(now: datetime) -> List[Dict[str, Any]]:
-    with get_conn(True) as con:
-        cur = con.execute(
-            """
-            SELECT track_id, title, owner_user_id, status,
-                   NULL AS start_at, NULL AS end_at, created_at, updated_at
-            FROM tracks
-            WHERE status = 'active'
-            ORDER BY created_at DESC
-            """,
-            [],
-        )
-        rows = dictrows(cur)
-    return rows
-
-
 def list_teachers_for_track(track_id: str) -> List[Dict[str, Any]]:
     with get_conn(True) as con:
         cur = con.execute(
@@ -79,21 +63,6 @@ def list_teachers_for_track(track_id: str) -> List[Dict[str, Any]]:
         )
         rows = dictrows(cur)
     return rows
-
-
-def rename_title(track_id: str, title: str) -> Optional[Dict[str, Any]]:
-    with get_conn(False) as con:
-        cur = con.execute(
-            """
-            UPDATE tracks
-            SET title = ?, updated_at = CURRENT_TIMESTAMP
-            WHERE track_id = ?
-            RETURNING track_id, title
-            """,
-            [title, track_id],
-        )
-        rows = dictrows(cur)
-    return rows[0] if rows else None
 
 
 def list_tracks_for_user(user_id: str) -> List[Dict[str, Any]]:
@@ -117,16 +86,3 @@ def list_tracks_for_user(user_id: str) -> List[Dict[str, Any]]:
     return rows
 
 
-def is_teacher(track_id: str, user_id: str) -> bool:
-    with get_conn(True) as con:
-        cur = con.execute(
-            """
-            SELECT 1
-            FROM track_participants
-            WHERE track_id = ? AND user_id = ? AND role_in_track = 'teacher'
-            LIMIT 1
-            """,
-            [track_id, user_id],
-        )
-        row = cur.fetchone()
-    return row is not None

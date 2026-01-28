@@ -29,17 +29,19 @@ def create_token(
                 token_id,
                 user_id,
                 telegram_user_id,
+                token_hash,
                 expires_at,
                 user_agent,
                 ip_hash,
                 payload_json
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
             """,
             [
                 token_id,
                 user_id,
                 telegram_user_id,
+                "",
                 ensure_naive_utc(expires_at),
                 user_agent,
                 ip_hash,

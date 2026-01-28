@@ -80,7 +80,7 @@ SERVER_VERSION = _require_env("SERVER_VERSION")
 if not SERVER_VERSION and SAFE_CHECK_ON_START:
     _exit_with_config_error('version_error="SERVER_VERSION missing"')
 
-_version_json_path = Path(__file__).resolve().parent / "server" / "version.json"
+_version_json_path = Path(__file__).resolve().parent / "server" / "server" / "version.json"
 VERSION_JSON_PATH = _version_json_path
 BUILD_NAME: str | None = None
 BUILD_DATETIME: str | None = None

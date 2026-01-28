@@ -117,27 +117,3 @@ def need_client_role(caller: Caller = Depends(require_token(allow_client=True, a
     return caller
 
 
-def require_actor_user(caller: Caller = Depends(require_token(allow_client=True))) -> str:
-    if caller.kind == "client":
-        if not caller.user_id:
-            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Client token required")
-        return caller.user_id
-
-    if caller.kind == "server":
-        if caller.act_as_user_id:
-            return caller.act_as_user_id
-        if caller.act_as_telegram_user_id is not None:
-            from ..db import users_repo
-
-            user = users_repo.get_by_telegram_id(caller.act_as_telegram_user_id)
-            if not user:
-                raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
-            return user["user_id"]
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Missing X-Act-As-*")
-
-    raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Unsupported token")
-
-
-def require_actor_caller(caller: Caller = Depends(require_token(allow_client=True))) -> tuple[Caller, str]:
-    actor_user_id = require_actor_user(caller)
-    return caller, actor_user_id
