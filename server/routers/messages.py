@@ -5,7 +5,7 @@ from typing import List
 
 from fastapi import APIRouter, Depends, Query
 
-from ..middleware.access import Caller, require_token
+from ..middleware.access import Caller, require_actor_caller, require_token
 from ..schemas.messages import (
     MessageOut,
     MessageSendIn,
@@ -62,14 +62,16 @@ def sent_messages(
 @router.post("/send", response_model=MessageSendOut)
 def send_message(
     payload: MessageSendIn,
-    caller: Caller = Depends(require_token(allow_client=True)),
+    actor: tuple[Caller, str] = Depends(require_actor_caller),
 ) -> MessageSendOut:
-    return service_send_message(caller=caller, payload=payload)
+    caller, actor_user_id = actor
+    return service_send_message(caller=caller, actor_user_id=actor_user_id, payload=payload)
 
 
 @router.post("/mark-read", response_model=MessagesMarkReadOut)
 def mark_read(
     payload: MessagesMarkReadIn,
-    caller: Caller = Depends(require_token(allow_client=True)),
+    actor: tuple[Caller, str] = Depends(require_actor_caller),
 ) -> MessagesMarkReadOut:
-    return service_mark_read(caller=caller, payload=payload)
+    caller, actor_user_id = actor
+    return service_mark_read(caller=caller, actor_user_id=actor_user_id, payload=payload)
